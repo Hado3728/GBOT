@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GBOT Dashboard</title>
+  <meta name="description" content="GBOT — Real-time algorithmic crypto trading dashboard with 4H Range Scalp strategy." />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    /* ─── Reset & base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:    #00ffcc;
+      --accent2:   #7b2ff7;
+      --green:     #00e096;
+      --red:       #ff4d6d;
+      --text:      #e2e8f0;
+      --muted:     #94a3b8;
+      --glass-bg:  rgba(255,255,255,0.05);
+      --glass-border: rgba(255,255,255,0.10);
+      --blur:      blur(16px);
+      --radius:    16px;
+      --shadow:    0 8px 32px rgba(0,0,0,0.45);
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0a0f1e 0%, #0f2027 35%, #203a43 70%, #2c5364 100%);
+      min-height: 100vh;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* Subtle floating orb backgrounds */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+    }
+    body::before {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(0,255,204,0.08) 0%, transparent 70%);
+      top: -150px; left: -100px;
+    }
+    body::after {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(123,47,247,0.10) 0%, transparent 70%);
+      bottom: -100px; right: -80px;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    /* ─── Glass card ─── */
+    .glass {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* ─── Header ─── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 22px 30px;
+      margin-bottom: 28px;
+    }
+    .logo-group { display: flex; align-items: center; gap: 14px; }
+    .logo-icon {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    h1 span { color: var(--accent); }
+
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .status-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.78rem; font-weight: 500;
+      color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.4s;
+    }
+    .status-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+
+    #toggleBtn {
+      padding: 10px 28px;
+      border-radius: 50px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 0.5px;
+      background: linear-gradient(135deg, var(--accent), #00c9a0);
+      color: #0a0f1e;
+      box-shadow: 0 0 24px rgba(0,255,204,0.35);
+    }
+    #toggleBtn.stop {
+      background: linear-gradient(135deg, var(--red), #c62828);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(255,77,109,0.35);
+    }
+    #toggleBtn:hover { transform: translateY(-2px) scale(1.03); }
+    #toggleBtn:active { transform: scale(0.97); }
+
+    /* ─── Metrics Ribbon ─── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .metric-card {
+      padding: 24px 22px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    .metric-card:hover { transform: translateY(-4px); }
+    .metric-label {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--accent), #7b2ff7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .metric-value.green { background: linear-gradient(135deg, var(--green), var(--accent)); -webkit-background-clip: text; background-clip: text; }
+    .metric-value.red   { background: linear-gradient(135deg, var(--red), #ff8c69);       -webkit-background-clip: text; background-clip: text; }
+    .metric-sub {
+      font-size: 0.72rem; color: var(--muted); margin-top: 6px;
+    }
+
+    /* ─── Main grid ─── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* ─── Settings panel ─── */
+    .panel-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px; height: 14px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .settings-panel { padding: 26px 24px; }
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+    input[type="text"], input[type="password"], input[type="number"], input[type="email"] {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,255,204,0.12);
+    }
+    input::placeholder { color: rgba(255,255,255,0.25); }
+
+    #saveBtn {
+      width: 100%;
+      margin-top: 18px;
+      padding: 11px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent2), #5b21b6);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(123,47,247,0.4);
+    }
+    #saveBtn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(123,47,247,0.5); }
+    #saveBtn:active { transform: scale(0.98); }
+    #saveStatus {
+      font-size: 0.75rem; color: var(--accent); text-align: center;
+      margin-top: 8px; min-height: 18px;
+      transition: opacity 0.3s;
+    }
+
+    /* ─── Chart panel ─── */
+    .chart-panel { padding: 26px 24px; }
+    .chart-wrapper { position: relative; height: 260px; }
+
+    /* ─── Logs panel ─── */
+    .logs-panel { padding: 22px 24px; margin-bottom: 24px; }
+    #logBox {
+      height: 200px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.35);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      font-size: 0.76rem;
+      line-height: 1.7;
+      color: #b4ffea;
+      border: 1px solid rgba(0,255,204,0.12);
+    }
+    #logBox::-webkit-scrollbar { width: 5px; }
+    #logBox::-webkit-scrollbar-track { background: transparent; }
+    #logBox::-webkit-scrollbar-thumb { background: rgba(0,255,204,0.25); border-radius: 4px; }
+    .log-line { border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 2px; }
+    .log-line:last-child { border-bottom: none; }
+
+    /* ─── Orders panel ─── */
+    .orders-panel { padding: 22px 24px; margin-bottom: 32px; }
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    thead tr {
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text);
+      font-weight: 400;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.2s; }
+    tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .badge.long  { background: rgba(0,224,150,0.15); color: var(--green); border: 1px solid rgba(0,224,150,0.3); }
+    .badge.short { background: rgba(255,77,109,0.15); color: var(--red);   border: 1px solid rgba(255,77,109,0.3); }
+
+    .no-orders {
+      text-align: center;
+      padding: 32px;
+      color: var(--muted);
+      font-size: 0.83rem;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      text-align: center;
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.2);
+      padding-bottom: 20px;
+    }
+
+    /* ─── Animations ─── */
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .glass { animation: fadeSlideIn 0.5s ease both; }
+    .metric-card:nth-child(1) { animation-delay: 0.05s; }
+    .metric-card:nth-child(2) { animation-delay: 0.10s; }
+    .metric-card:nth-child(3) { animation-delay: 0.15s; }
+    .metric-card:nth-child(4) { animation-delay: 0.20s; }
+    .settings-panel { animation-delay: 0.25s; }
+    .chart-panel    { animation-delay: 0.30s; }
+    .logs-panel     { animation-delay: 0.35s; }
+    .orders-panel   { animation-delay: 0.40s; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="glass">
+    <div class="logo-group">
+      <div class="logo-icon">⚡</div>
+      <h1>G<span>BOT</span> Dashboard</h1>
+    </div>
+    <div class="header-right">
+      <div class="status-badge">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">IDLE</span>
+      </div>
+      <button id="toggleBtn" onclick="toggleBot()">▶ START</button>
+    </div>
+  </header>
+
+  <!-- ═══ METRICS ═══ -->
+  <div class="metrics-grid">
+    <div class="metric-card glass">
+      <div class="metric-label">Total PNL</div>
+      <div class="metric-value" id="totalPnl">$0.00</div>
+      <div class="metric-sub">Cumulative profit/loss</div>
+    </div>
+    <div class="metric-card glass">
+      <div class="metric-label">Success Rate</div>
+      <div class="metric-value" id="winRate">0%</div>
+      <div class="metric-sub">Win percentage</div>
+    </div>
+    <div class="metric-card glass">
+      <div class="metric-label">Wins</div>
+      <div class="metric-value green" id="winCount">0</div>
+      <div class="metric-sub">Profitable trades</div>
+    </div>
+    <div class="metric-card glass">
+      <div class="metric-label">Losses</div>
+      <div class="metric-value red" id="lossCount">0</div>
+      <div class="metric-sub">Losing trades</div>
+    </div>
+  </div>
+
+  <!-- ═══ SETTINGS + CHART ═══ -->
+  <div class="main-grid">
+
+    <!-- Settings -->
+    <div class="settings-panel glass">
+      <div class="panel-title">Configuration</div>
+
+      <div class="form-group">
+        <label for="riskInput">Risk Per Trade ($)</label>
+        <input type="number" id="riskInput" placeholder="10.00" min="0.1" step="0.1" />
+      </div>
+      <div class="form-group">
+        <label for="smtpEmail">SMTP Email</label>
+        <input type="email" id="smtpEmail" placeholder="you@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label for="smtpPass">SMTP App Password</label>
+        <input type="password" id="smtpPass" placeholder="••••••••••••" />
+      </div>
+      <div class="form-group">
+        <label for="apiKey">Binance API Key</label>
+        <input type="text" id="apiKey" placeholder="API Key" />
+      </div>
+      <div class="form-group">
+        <label for="apiSecret">Binance Secret Key</label>
+        <input type="password" id="apiSecret" placeholder="Secret Key" />
+      </div>
+
+      <button id="saveBtn" onclick="saveSettings()">💾 Save Configuration</button>
+      <div id="saveStatus"></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-panel glass">
+      <div class="panel-title">Profit History</div>
+      <div class="chart-wrapper">
+        <canvas id="profitChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ SCAN LOGS ═══ -->
+  <div class="logs-panel glass">
+    <div class="panel-title">Live Scan Logs</div>
+    <div id="logBox"><span style="color:rgba(255,255,255,0.3)">— waiting for scanner activity —</span></div>
+  </div>
+
+  <!-- ═══ ORDERS TABLE ═══ -->
+  <div class="orders-panel glass">
+    <div class="panel-title">Open Orders</div>
+    <div class="table-wrap">
+      <table id="ordersTable">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Pair</th>
+            <th>Side</th>
+            <th>Entry</th>
+            <th>Take Profit</th>
+            <th>Stop Loss</th>
+            <th>Qty</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="7" class="no-orders">No open orders</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>GBOT v1.0 · 4H Range Scalp · BTC / SUI / PAXG · Educational use only</footer>
+</div>
+
+<!-- ═══ JAVASCRIPT ═══ -->
+<script>
+  // ── Chart Setup
+  const ctx = document.getElementById('profitChart').getContext('2d');
+  const gradientFill = ctx.createLinearGradient(0, 0, 0, 260);
+  gradientFill.addColorStop(0, 'rgba(0,255,204,0.25)');
+  gradientFill.addColorStop(1, 'rgba(0,255,204,0.00)');
+
+  const profitChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Cumulative PNL ($)',
+        data: [],
+        borderColor: '#00ffcc',
+        borderWidth: 2,
+        pointBackgroundColor: '#00ffcc',
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        fill: true,
+        backgroundColor: gradientFill,
+        tension: 0.4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,15,30,0.9)',
+          titleColor: '#00ffcc',
+          bodyColor: '#e2e8f0',
+          borderColor: 'rgba(0,255,204,0.3)',
+          borderWidth: 1,
+          padding: 12,
+          callbacks: {
+            label: ctx => ` $${ctx.parsed.y.toFixed(2)}`
+          }
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          display: true,
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            color: '#64748b',
+            font: { family: 'Poppins', size: 11 },
+            callback: v => '$' + v.toFixed(0)
+          }
+        }
+      },
+      animation: { duration: 600, easing: 'easeInOutQuart' }
+    }
+  });
+
+  // ── State
+  let isRunning = false;
+  let knownLogCount = 0;
+
+  // ── Polling
+  async function pollState() {
+    try {
+      const res = await fetch('/api/state');
+      if (!res.ok) return;
+      const data = await res.json();
+
+      updateMetrics(data);
+      updateChart(data.profit_history);
+      updateLogs(data.logs);
+      updateOrders(data.open_orders);
+      updateToggleBtn(data.is_running);
+      isRunning = data.is_running;
+
+    } catch (e) {
+      console.warn('Poll error:', e);
+    }
+  }
+
+  function updateMetrics(data) {
+    const pnl = data.total_profit ?? 0;
+    const el = document.getElementById('totalPnl');
+    el.textContent = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2);
+    el.className = 'metric-value ' + (pnl >= 0 ? 'green' : 'red');
+
+    document.getElementById('winRate').textContent   = (data.win_rate ?? 0).toFixed(1) + '%';
+    document.getElementById('winCount').textContent  = data.wins   ?? 0;
+    document.getElementById('lossCount').textContent = data.losses ?? 0;
+  }
+
+  function updateChart(history) {
+    if (!history || history.length === 0) return;
+    if (profitChart.data.datasets[0].data.length === history.length) return;
+    profitChart.data.labels   = history.map((_, i) => `T${i+1}`);
+    profitChart.data.datasets[0].data = history;
+    profitChart.update();
+  }
+
+  function updateLogs(logs) {
+    if (!logs || logs.length === knownLogCount) return;
+    knownLogCount = logs.length;
+    const box = document.getElementById('logBox');
+    box.innerHTML = logs.map(l =>
+      `<div class="log-line">${escapeHtml(l)}</div>`
+    ).join('');
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function updateOrders(orders) {
+    const tbody = document.getElementById('ordersBody');
+    if (!orders || orders.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="no-orders">No open orders</td></tr>';
+      return;
+    }
+    tbody.innerHTML = orders.map(o => `
+      <tr>
+        <td>${escapeHtml(o.time)}</td>
+        <td><strong>${escapeHtml(o.pair)}</strong></td>
+        <td><span class="badge ${o.side === 'LONG' ? 'long' : 'short'}">${o.side}</span></td>
+        <td>${(+o.entry).toFixed(4)}</td>
+        <td style="color:var(--green)">${(+o.tp).toFixed(4)}</td>
+        <td style="color:var(--red)">${(+o.sl).toFixed(4)}</td>
+        <td>${o.qty}</td>
+      </tr>
+    `).join('');
+  }
+
+  function updateToggleBtn(running) {
+    const btn  = document.getElementById('toggleBtn');
+    const dot  = document.getElementById('statusDot');
+    const text = document.getElementById('statusText');
+    if (running) {
+      btn.textContent = '⏹ STOP';
+      btn.classList.add('stop');
+      dot.classList.add('active');
+      text.textContent = 'SCANNING';
+    } else {
+      btn.textContent = '▶ START';
+      btn.classList.remove('stop');
+      dot.classList.remove('active');
+      text.textContent = 'IDLE';
+    }
+  }
+
+  // ── Actions
+  async function toggleBot() {
+    try {
+      const res = await fetch('/api/toggle', { method: 'POST' });
+      const data = await res.json();
+      updateToggleBtn(data.is_running);
+    } catch (e) {
+      console.error('Toggle error:', e);
+    }
+  }
+
+  async function saveSettings() {
+    const payload = {
+      risk_per_trade:  document.getElementById('riskInput').value   || undefined,
+      smtp_email:      document.getElementById('smtpEmail').value   || undefined,
+      smtp_password:   document.getElementById('smtpPass').value    || undefined,
+      api_key:         document.getElementById('apiKey').value      || undefined,
+      api_secret:      document.getElementById('apiSecret').value   || undefined,
+    };
+    // Remove undefined keys
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const st = document.getElementById('saveStatus');
+      if (res.ok) {
+        st.textContent = '✓ Configuration saved!';
+        st.style.color = 'var(--accent)';
+      } else {
+        st.textContent = '✗ Save failed.';
+        st.style.color = 'var(--red)';
+      }
+      setTimeout(() => { st.textContent = ''; }, 3000);
+    } catch (e) {
+      console.error('Save error:', e);
+    }
+  }
+
+  // ── HTML escape helper
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  // ── Start polling immediately and then every 2 seconds
+  pollState();
+  setInterval(pollState, 2000);
+</script>
+</body>
+</html>
