@@ -1,4 +1,4 @@
-# GBOT — Algorithmic Crypto Scalping Bot 🚀
+# GBOT — Algorithmic Crypto Scalping Bot 
 
 Welcome to **GBOT**, a fully autonomous cryptocurrency scalping system equipped with an elegant, modern Glassmorphism web dashboard. Built for precision and speed, GBOT monitors key crypto pairs and executes trades based on a specialized 4H Range Breakout strategy.
 
@@ -6,7 +6,7 @@ Welcome to **GBOT**, a fully autonomous cryptocurrency scalping system equipped 
 
 ---
 
-## ✨ Features
+##  Features
 
 - **Autonomous Trading Engine**: Automatically monitors markets 24/7 scanning for optimal entry points based on the configured strategy.
 - **Advanced 4H Range Scalp Strategy**: Trades the breakout patterns of 4-hour candles with a 5-minute precision re-entry layer.
@@ -17,7 +17,7 @@ Welcome to **GBOT**, a fully autonomous cryptocurrency scalping system equipped 
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```text
 GBOT/
@@ -30,7 +30,7 @@ GBOT/
 
 ---
 
-## 📈 The Strategy: 4H Range Scalp
+##  The Strategy: 4H Range Scalp
 
 The core logic attempts to capture mean-reversion trades immediately following false breakouts on higher timeframes.
 
@@ -51,7 +51,7 @@ By default, the scanner handles:
 
 ---
 
-## 🚀 Setup & Installation
+##  Setup & Installation
 
 ### Prerequisites
 - Python 3.9+
@@ -77,11 +77,11 @@ python gbot.py
 After executing, the Python script will instantly launch the Trading Scanner Thread in a background loop and the Flask application will become available on port `8080`.
 
 Open your browser and navigate to the dashboard:
-👉 **[http://127.0.0.1:8080](http://127.0.0.1:8080)**
+ **[http://127.0.0.1:8080](http://127.0.0.1:8080)**
 
 ---
 
-## ⚙️ Configuration & Security
+##  Configuration & Security
 
 **GBOT stores no sensitive info in its source files.** Upon launching the server, you must configure your parameters directly via the web dashboard:
 
@@ -96,7 +96,7 @@ Open your browser and navigate to the dashboard:
 
 ---
 
-## 🌐 API Reference
+##  API Reference
 
 GBOT provides several useful HTTP endpoints used by the frontend:
 
@@ -108,8 +108,7 @@ GBOT provides several useful HTTP endpoints used by the frontend:
 | `POST` | `/api/settings` | Updates in-memory trading and mail configurations. |
 
 ---
-
-## 📬 Automated Daily Reports
+##  Automated Daily Reports
 Set up the SMTP fields in the dashboard to receive daily updates. Every day at **07:00 AM (New York Time)**, GBOT will securely dispatch a report to your email, bringing you full visibility on:
 - Cumulative Profit & Loss
 - Live Win Percentage
